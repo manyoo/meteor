@@ -11,7 +11,31 @@ var removeNode = function (n) {
 //      n.parentNode.$uihooks && n.parentNode.$uihooks.removeElement)
 //    n.parentNode.$uihooks.removeElement(n);
 //  else
-    n.parentNode.removeChild(n);
+  
+  // remove the node as well as clean up all events in $_uievents
+  var parentNode = n.parentNode;
+  var range = n.$ui;
+  parentNode.removeChild(n);
+  
+  if (parentNode && range) {
+    var eventDict = parentNode.$_uievents;
+    if (eventDict) {
+      var eventTypes = Object.keys(eventDict);
+      for (var i = 0, n = eventTypes.length; i < n; i++) {
+        var eventType = eventTypes[i];
+        var info = eventDict[eventType];
+        var handlerList = info.handlers;
+        for (var j = 0, m = handlerList.length; j < m; j++) {
+          var handlerRec = handlerList[j];
+          if (handlerRec && handlerRec.$ui === range) {
+            handlerRec.unbind();
+            handlerList.splice(j, 1);
+            j--;
+          }
+        }
+      }
+    }
+  }
 };
 
 var insertNode = function (n, parent, next) {
